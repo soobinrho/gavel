@@ -1,0 +1,20 @@
+{% macro timer(start_time) %}
+    <script>
+    	const ALLOWED_TIME = 5 * 60000 //in milliseconds
+    	setInterval(function() {
+		    countdown = document.getElementById('countdown')
+		    const formatNumber = (num) => String(Math.trunc(num)).padStart(2, '0')
+		    let time_delta = (new Date()) - Date.parse("{{start_time}}" + " UTC")
+		    let time_left = Math.max(ALLOWED_TIME - time_delta, 0)
+
+		    if (time_left < 1000) {
+		    	countdown.classList.add("time-done")
+		    }
+
+		    let tot_seconds = Math.floor(time_left / 1000)
+		    let minutes = formatNumber(Math.floor(tot_seconds / 60))
+		    let seconds = formatNumber(tot_seconds % 60)
+		    countdown.innerHTML = `${minutes}:${seconds}`
+		}, 500)
+    </script>
+{% endmacro %}

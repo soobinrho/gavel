@@ -176,6 +176,7 @@ def annotator():
     action = request.form['action']
     if action == 'Submit':
         data = parse_upload_form()
+        print(data)
         added = []
         if data:
             # validate data
@@ -297,7 +298,7 @@ def email_invite_links(annotators):
         raw_body = settings.EMAIL_BODY.format(name=annotator.name, link=link)
         body = '\n\n'.join(utils.get_paragraphs(raw_body))
         emails.append((annotator.email, settings.EMAIL_SUBJECT, body))
-        
+    
     utils.send_emails.delay(emails)
     # utils.send_emails(emails) # originally in jamiefu/start_judging branch
 

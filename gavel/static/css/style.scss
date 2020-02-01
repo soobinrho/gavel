@@ -307,3 +307,29 @@ input[type=submit].neutral {
     text-align: center;
   }
 }
+
+
+/* timer styling */
+
+.show-timer {
+  display: flex;
+}
+
+#countdown {
+  margin: auto;
+  font-weight: bold;
+  font-size: 2em;
+  padding-left: 20px;
+  padding-right: 10px;
+}
+
+.time-done {
+  color: $error-color;
+}
+
+@media screen and (max-width: 500px) {
+  .show-timer {
+    display: flex;
+    flex-direction: column;
+  }
+}

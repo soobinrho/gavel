@@ -11,6 +11,7 @@ from flask import (
     session,
     url_for,
 )
+from sqlalchemy import func
 from numpy.random import choice, random, shuffle
 from functools import wraps
 from datetime import datetime
@@ -67,9 +68,15 @@ def index():
                 content=utils.render_markdown(settings.WAIT_MESSAGE)
             )
         elif annotator.prev is None:
-            return render_template('begin.html', item=annotator.next)
+            time = Setting.by_key("start_time").value
+            return render_template('begin.html', start_time=time, item=annotator.next)
         else:
-            return render_template('vote.html', prev=annotator.prev, next=annotator.next)
+            query = Decision.query.filter_by(annotator_id=annotator.id)
+            if query.count() > 0:
+                time = max(Decision.query.filter_by(annotator_id=annotator.id), key=lambda d: d.time).time
+            else:
+                time = Setting.by_key("start_time").value
+            return render_template('vote.html', start_time=time, prev=annotator.prev, next=annotator.next)
 
 @app.route('/vote', methods=['POST'])
 @requires_open(redirect_to='index')
