@@ -199,9 +199,9 @@ def annotator():
     elif action == 'Start Judging':
         rows = Annotator.query.all()
         activate_judging(rows)
-        exists = db.session.query(User.id).filter_by(name='start_time').scalar() is not None
+        exists = Setting.by_key("start_time") is not None
         if exists:
-            db.session.query(User.id).filter_by(name='start_time').update(dict(value=datetime.datetime.now()))
+            Setting.set('start_time', datetime.datetime.now())
         else:
             starter = Setting(key = "start_time", value = datetime.datetime.now())
             db.session.add(starter)
