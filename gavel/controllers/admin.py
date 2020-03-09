@@ -199,6 +199,12 @@ def annotator():
     elif action == 'Start Judging':
         rows = Annotator.query.all()
         activate_judging(rows)
+        exists = Setting.by_key("start_time") is not None
+        if exists:
+            Setting.set('start_time', datetime.datetime.now())
+        else:
+            starter = Setting(key = "start_time", value = datetime.datetime.now())
+            db.session.add(starter)
         db.session.commit()
     elif action == 'Email':
         annotator_id = request.form['annotator_id']
