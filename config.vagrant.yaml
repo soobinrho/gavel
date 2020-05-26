@@ -2,7 +2,7 @@
 base_url: http://localhost:5000/
 admin_password: admin
 secret_key: gavel
-db_uri: postgresql://localhost/gavel
+db_uri: postgres://thxxvthrazghgu:b6cc130a141388b2793bf325a1f93a2d88ceae17493cd761856675fd9ee56105@ec2-3-215-41-107.compute-1.amazonaws.com:5432/desj2up2q045lq 
 disable_email: true
 email_from: '' # needs to be set to something even though email is disabled
 email_user: ''

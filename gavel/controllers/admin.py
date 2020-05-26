@@ -3,6 +3,7 @@ from gavel.models import *
 from gavel.constants import *
 import gavel.settings as settings
 import gavel.utils as utils
+import gavel.stats as stats
 from flask import (
     redirect,
     render_template,
@@ -11,12 +12,14 @@ from flask import (
 )
 import urllib.parse
 import xlrd
+import psycopg2
 
 ALLOWED_EXTENSIONS = set(['csv', 'xlsx', 'xls'])
 
 @app.route('/admin/')
 @utils.requires_auth
 def admin():
+    stats.check_send_telemetry()
     annotators = Annotator.query.order_by(Annotator.id).all()
     items = Item.query.order_by(Item.id).all()
     decisions = Decision.query.all()
@@ -46,6 +49,8 @@ def admin():
         items=items,
         votes=len(decisions),
         setting_closed=setting_closed,
+        num_annotators=len(annotators),
+        num_items=len(items)
     )
 
 @app.route('/admin/item', methods=['POST'])
@@ -80,7 +85,10 @@ def item():
             Item.query.filter_by(id=item_id).delete()
             db.session.commit()
         except IntegrityError as e:
-            return utils.server_error(str(e))
+            if isinstance(e.orig, psycopg2.errors.ForeignKeyViolation):
+                return utils.server_error("Projects can't be deleted once they have been voted on by a judge. You can use the 'disable' functionality instead, which has a similar effect, preventing the project from being shown to judges.")
+            else:
+                return utils.server_error(str(e))
     return redirect(url_for('admin'))
 
 
@@ -160,7 +168,10 @@ def annotator():
             Annotator.query.filter_by(id=annotator_id).delete()
             db.session.commit()
         except IntegrityError as e:
-            return utils.server_error(str(e))
+            if isinstance(e.orig, psycopg2.errors.ForeignKeyViolation):
+                return utils.server_error("Judges can't be deleted once they have voted on a project. You can use the 'disable' functionality instead, which has a similar effect, locking out the judge and preventing them from voting on any other projects.")
+            else:
+                return utils.server_error(str(e))
     return redirect(url_for('admin'))
 
 @app.route('/admin/setting', methods=['POST'])
