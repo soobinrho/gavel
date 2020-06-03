@@ -3,7 +3,7 @@ from gavel.models import *
 from gavel.constants import *
 import gavel.settings as settings
 import gavel.utils as utils
-import gavel.stats as stats
+import gavel.stats as statistics
 from flask import (
     redirect,
     render_template,
@@ -20,7 +20,7 @@ ALLOWED_EXTENSIONS = set(['csv', 'xlsx', 'xls'])
 @app.route('/admin/')
 @utils.requires_auth
 def admin():
-    stats.check_send_telemetry()
+    statistics.check_send_telemetry()
     annotators = Annotator.query.order_by(Annotator.id).all()
     items = Item.query.order_by(Item.id).all()
     decisions = Decision.query.all()
@@ -87,7 +87,8 @@ def admin():
     stats['avg_judges'] = average_judges
 
     stats['avg_time'] = average(sum(project_times.values(), []), datetime.timedelta(0))
-
+    stats['num_items']=len(items)
+    stats['num_judges']=len(annotators)
     return render_template(
         'admin.html',
         annotators=annotators,
@@ -98,8 +99,6 @@ def admin():
         stats=stats,
         times=times,
         setting_closed=setting_closed,
-        num_annotators=len(annotators),
-        num_items=len(items)
     )
 
 @app.route('/admin/item', methods=['POST'])

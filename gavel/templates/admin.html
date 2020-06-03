@@ -12,11 +12,10 @@
     <h2>Stats</h2>
   </div>
   <div class="info">
-    <p><strong>Total votes: </strong>{{ stats["votes"] }}</p>
+    <p><strong>Project Count: </strong>{{ stats["num_items"] }} &emsp; <strong>Judge Count: </strong>{{ stats["num_judges"] }} &emsp; <strong>Total Votes: </strong>{{ stats["votes"] }}</p>
     <p><strong>Average votes per judge: </strong>{{ stats["avg_votes"] | round(3) }}</p>
     <p><strong>Average votes per project: </strong>{{ stats["avg_judges"] | round(3) }}</p>
     <p><strong>Average time per project: </strong>{{ stats["avg_time"] | timedelta_legible }}</p>
-    <p><strong>Project Count: </strong>{{ num_items }} &emsp; <strong>Judge Count: </strong>{{ num_annotators }} &emsp; <strong>Votes: </strong>{{ votes }}</p>
   </div>
 </div>
 <div class="item">
