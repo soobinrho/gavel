@@ -16,6 +16,7 @@
     <p><strong>Average votes per judge: </strong>{{ stats["avg_votes"] | round(3) }}</p>
     <p><strong>Average votes per project: </strong>{{ stats["avg_judges"] | round(3) }}</p>
     <p><strong>Average time per project: </strong>{{ stats["avg_time"] | timedelta_legible }}</p>
+    <p><strong>Project Count: </strong>{{ num_items }} &emsp; <strong>Judge Count: </strong>{{ num_annotators }} &emsp; <strong>Votes: </strong>{{ votes }}</p>
   </div>
 </div>
 <div class="item">
@@ -80,6 +81,9 @@
       </tbody>
     </table>
   </div>
+  <div class="api-link">
+    <a href="{{ url_for('item_dump') }}">Download CSV</a>
+  </div>
 </div>
 
 <div class="item">
@@ -141,6 +145,9 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  <div class="api-link">
+    <a href="{{ url_for('annotator_dump') }}">Download CSV</a>
   </div>
 </div>
 
