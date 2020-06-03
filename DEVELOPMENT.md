@@ -79,7 +79,13 @@ celery -A gavel:celery worker
 **While developing, you should keep `vagrant rsync-auto` running on the host
 machine so that whenever you change any files, they're automatically synced
 over to the VM.** When the app running in the VM detects changed files, it'll
-automatically restart (because of the debug flag).
+automatically restart (because of the debug flag). Note that while working in 
+the Jinja templates, you will need to restart the server for changes to be 
+reflected. That is, rerun
+
+```bash
+DEBUG=true python runserver.py
+```
 
 ### Manual setup
 

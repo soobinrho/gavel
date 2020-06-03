@@ -12,6 +12,7 @@ from flask import (
 )
 import urllib.parse
 import xlrd
+import datetime
 import psycopg2
 
 ALLOWED_EXTENSIONS = set(['csv', 'xlsx', 'xls'])
@@ -23,8 +24,13 @@ def admin():
     annotators = Annotator.query.order_by(Annotator.id).all()
     items = Item.query.order_by(Item.id).all()
     decisions = Decision.query.all()
+    
     counts = {}
     item_counts = {}
+
+    judge_times = {} # maps annotator_id to list of tuples of (time, set(winner, loser))
+    average = lambda collection, start=0: sum(collection, start) / len(collection) if len(collection) != 0 else 0
+
     for d in decisions:
         a = d.annotator_id
         w = d.winner_id
@@ -32,14 +38,56 @@ def admin():
         counts[a] = counts.get(a, 0) + 1
         item_counts[w] = item_counts.get(w, 0) + 1
         item_counts[l] = item_counts.get(l, 0) + 1
+
+        time = d.time
+        judge_times.setdefault(a, []).append((time, frozenset({w, l})))
+
     viewed = {i.id: {a.id for a in i.viewed} for i in items}
     skipped = {}
+    project_times = {} # maps project id to list of times
+    judge_avgs = {}
+
     for a in annotators:
+
         for i in a.ignore:
             if a.id not in viewed[i.id]:
                 skipped[i.id] = skipped.get(i.id, 0) + 1
+        
+        this_times = judge_times.get(a.id, [])
+        this_times.sort(key=lambda elem: elem[0])
+        this_deltas = []
+
+        for prev_comp, next_comp in zip(this_times[:-1], this_times[1:]):
+            const = prev_comp[1] & next_comp[1]
+            project, = const
+            p_delta = next_comp[0] - prev_comp[0]
+
+            this_deltas.append(p_delta)
+            project_times.setdefault(project, []).append(p_delta)
+        judge_avg = average(this_deltas, datetime.timedelta(0))
+        judge_avgs[a.id] = judge_avg
+    
+    proj_avgs = {}
+    for proj_key, time_list in project_times.items():
+        proj_avgs[proj_key] = average(time_list, datetime.timedelta(0))
+
+    times = {'judge': judge_avgs, 'project': proj_avgs}
     # settings
     setting_closed = Setting.value_of(SETTING_CLOSED) == SETTING_TRUE
+
+    #store stats in a dictioanry
+    stats = {}
+
+    #calculate some stats:
+    stats['votes'] = len(decisions)
+
+    average_votes = average(counts.values())
+    stats['avg_votes'] = average_votes
+    average_judges = average(item_counts.values())
+    stats['avg_judges'] = average_judges
+
+    stats['avg_time'] = average(sum(project_times.values(), []), datetime.timedelta(0))
+
     return render_template(
         'admin.html',
         annotators=annotators,
@@ -47,7 +95,8 @@ def admin():
         item_counts=item_counts,
         skipped=skipped,
         items=items,
-        votes=len(decisions),
+        stats=stats,
+        times=times,
         setting_closed=setting_closed,
         num_annotators=len(annotators),
         num_items=len(items)
@@ -135,6 +184,7 @@ def annotator():
     action = request.form['action']
     if action == 'Submit':
         data = parse_upload_form()
+        print(data)
         added = []
         if data:
             # validate data
@@ -143,13 +193,27 @@ def annotator():
                     return utils.user_error('Bad data: row %d has %d elements (expecting 3)' % (index + 1, len(row)))
             for row in data:
                 annotator = Annotator(*row)
+                # SET ALL ANNOTATORS INITIALLY TO INACTIVE
+                annotator.active = False
                 added.append(annotator)
                 db.session.add(annotator)
             db.session.commit()
-            try:
-                email_invite_links(added)
-            except Exception as e:
-                return utils.server_error(str(e))
+    elif action == 'Mass Email':
+        try:
+            rows = Annotator.query.all()
+            email_invite_links(rows)
+        except Exception as e:
+            return utils.server_error(str(e))
+    elif action == 'Start Judging':
+        rows = Annotator.query.all()
+        activate_judging(rows)
+        exists = Setting.by_key("start_time") is not None
+        if exists:
+            Setting.set('start_time', datetime.datetime.now())
+        else:
+            starter = Setting(key = "start_time", value = datetime.datetime.now())
+            db.session.add(starter)
+        db.session.commit()
     elif action == 'Email':
         annotator_id = request.form['annotator_id']
         try:
@@ -245,5 +309,13 @@ def email_invite_links(annotators):
         raw_body = settings.EMAIL_BODY.format(name=annotator.name, link=link)
         body = '\n\n'.join(utils.get_paragraphs(raw_body))
         emails.append((annotator.email, settings.EMAIL_SUBJECT, body))
-
+    
     utils.send_emails.delay(emails)
+    # utils.send_emails(emails) # originally in jamiefu/start_judging branch
+
+def activate_judging(annotators):
+    if not isinstance(annotators, list):
+        annotators = [annotators]
+    
+    for annotator in annotators:
+        annotator.active = True

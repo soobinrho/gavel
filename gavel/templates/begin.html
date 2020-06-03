@@ -1,13 +1,23 @@
 {% extends "layout.html" %}
+{% from 'macros.html' import timer %}
 {% block title %}Start{% endblock %}
 {% block content %}
+
+{{ timer(start_time) }}
+
 <div class="item">
   <div class="banner-tight">
     <h1>Start</h1>
+   
   </div>
-  {% with item=item %}
-  {% include "_item.html" %}
-  {% endwith %}
+  <div class="show-timer">
+    <div>
+      {% with item=item %}
+      {% include "_item.html" %}
+      {% endwith %}
+    </div>
+     <p id='countdown'> : </p>
+  </div>
 </div>
 
 <div class="item">
